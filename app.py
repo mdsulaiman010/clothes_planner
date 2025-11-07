@@ -9,6 +9,9 @@ from db_functions import *
 from datetime import datetime
 
 st.set_page_config(page_title="Mobile Image Uploader", page_icon="📷", layout="centered")
+with open ('style.css', 'r') as f:
+    css = f.read()
+st.markdown(f"<style>{css}</style>",unsafe_allow_html=True)
 
 def register_page():
     st.title('Registration Page')
@@ -74,29 +77,23 @@ def image_page():
             save_bytes(f"clothing_{datetime.now().strftime('%d%m%Y_%H%M')}.jpg", shot.getvalue(), "image/jpeg")
 
         if uploads:
-            for up in uploads:
-                save_bytes(up.name, up.read(), up.type)
+            for upload in uploads:
+                save_bytes(upload.name, upload.read(), upload.type)
 
-        st.divider()
-        st.subheader("Latest")
-        for f in clothes_db["fs.files"].find().sort("uploadDate", -1).limit(6):
-            st.image(fs.get(f["_id"]).read(), caption=f.get("filename"), use_container_width=True)
-
-        if st.button('Logout'):
-            st.session_state.authenticated = False
-            st.session_state.page = 'login'
-            st.success('Successfully logged out.')
+    if st.button('Logout'):
+        st.session_state.authenticated = False
+        st.session_state.page = 'login'
+        st.success('Successfully logged out.')
 
 
 def selector_page():
     if 'authenticated' in st.session_state and st.session_state.authenticated:
         st.title("💃 Outfit Selector")
 
-        if st.button('Logout'):
-            st.session_state.authenticated = False
-            st.session_state.page = 'login'
-            st.success('Successfully logged out.')
-
+    if st.button('Logout'):
+        st.session_state.authenticated = False
+        st.session_state.page = 'login'
+        st.success('Successfully logged out.')
 
 def main():
     connect_db()
@@ -117,7 +114,6 @@ def main():
         if page == 'Logout':
             st.session_state.page = 'login'
             st.session_state.authenticated = False
-            st.success('You have successfully logged out!')
 
     else:
         page = st.sidebar.selectbox('Select a page', ['Login', 'Register'])
@@ -135,7 +131,6 @@ def main():
         image_page()
     elif st.session_state.page == 'selector':
         selector_page()
-
 
 if __name__ == "__main__":
     main()
