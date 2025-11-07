@@ -1,0 +1,31 @@
+body, section, video {
+    background-color: #f4c9ff;
+}
+
+.stAppToolbar {
+    background-color: #dd55ff;
+}
+
+.stButton > button, button[data-testid="stCameraInputButton"] {
+    background-color: #e371ff;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    margin: auto;
+    display: block;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.stButton > button:hover, button[data-testid="stCameraInputButton"]:hover {
+    background-color: #eca1ff;
+    color: white;
+}
+
+h1 {
+    color: #FF5733;
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    }
