@@ -6,6 +6,7 @@ import io, time, os
 from pymongo import MongoClient
 import gridfs
 from db_functions import *
+from datetime import datetime
 
 st.set_page_config(page_title="Mobile Image Uploader", page_icon="📷", layout="centered")
 
@@ -42,6 +43,7 @@ def login_page():
 
 def image_page():
     if 'authenticated' in st.session_state and st.session_state.authenticated:
+        _, clothes_db, fs = connect_mongodb()
         st.title("📷 Mobile Image Uploader")
 
         # 1) Take a photo
@@ -56,10 +58,20 @@ def image_page():
 
         def save_bytes(name: str, raw: bytes, mime: str):
             img = Image.open(io.BytesIO(raw))
-            st.success(f"Uploaded {name}")
+            _id = fs.put(
+                raw,
+                filename=name,
+                contentType=mime or "application/octet-stream",
+                metadata={
+                    "width": img.width, "height": img.height,
+                    "format": img.format, "bytes": len(raw),
+                    "uploaded_at": time.time(),
+                },
+            )
+            st.success(f"Uploaded {name} to database → {_id}")
 
         if shot is not None:
-            save_bytes("camera.jpg", shot.getvalue(), "image/jpeg")
+            save_bytes(f"clothing_{datetime.now().strftime('%d%m%Y_%H%M')}.jpg", shot.getvalue(), "image/jpeg")
 
         if uploads:
             for up in uploads:
@@ -67,6 +79,8 @@ def image_page():
 
         st.divider()
         st.subheader("Latest")
+        for f in clothes_db["fs.files"].find().sort("uploadDate", -1).limit(6):
+            st.image(fs.get(f["_id"]).read(), caption=f.get("filename"), use_container_width=True)
 
         if st.button('Logout'):
             st.session_state.authenticated = False
