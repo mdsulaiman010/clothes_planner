@@ -4,3 +4,12 @@ numpy==2.3.4
 urllib3==2.5.0
 pymongo==4.15.3
 python-dotenv==1.2.1
+requests==2.32.5
+PyYAML==6.0.3
+matplotlib==3.10.7
+torch==2.9.0+cu126
+torchvision==0.24.0+cu126
+ultralytics==8.0.58
+transformers==4.57.1
+huggingface-hub==0.36.0
+google-genai==1.49.0
