@@ -7,11 +7,30 @@ from pymongo import MongoClient
 import gridfs
 from db_functions import *
 from datetime import datetime
+from google import genai
+from google.genai import types
 
 st.set_page_config(page_title="Mobile Image Uploader", page_icon="📷", layout="centered")
 with open ('style.css', 'r') as f:
     css = f.read()
 st.markdown(f"<style>{css}</style>",unsafe_allow_html=True)
+
+def classify_image(image_bytes):
+    # Initialize Google generative AI client
+    client = genai.Client()
+
+    # Pre-defined classification prompt
+    classification_prompt = '''Categorize the attached clothing into 1 of 5 categories: outerwear, top, bottomwear, footwear, accessories. 
+    
+    Only return the predicted category. 
+    
+    Do not provide explanations or additional discussion points.
+    '''
+
+    # Predict with LLM
+    response = client.models.generate_content(model='gemini-2.5-flash', contents=[types.Part.from_bytes(data=image_bytes, mime_type='image/jpeg'), classification_prompt])
+    return response.candidates[0].content.parts[0].text
+
 
 def register_page():
     st.title('Registration Page')
@@ -60,6 +79,9 @@ def image_page():
         )
 
         def save_bytes(name: str, raw: bytes, mime: str):
+            # Classify image 
+            img_category = classify_image(raw)
+
             img = Image.open(io.BytesIO(raw))
             _id = fs.put(
                 raw,
@@ -69,6 +91,7 @@ def image_page():
                     "width": img.width, "height": img.height,
                     "format": img.format, "bytes": len(raw),
                     "uploaded_at": time.time(),
+                    'category': img_category
                 },
             )
             st.success(f"Uploaded {name} to database → {_id}")
