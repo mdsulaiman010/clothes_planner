@@ -158,7 +158,7 @@ def create_image_selector(key, label, img_bytes, card_width=200, card_height=250
             st.rerun()
     
     with nav_cols[1]:
-        st.markdown(f"<div style='text-align: center; padding: 8px;'>Page {current_page + 1} of {total_pages} ({num_images} items)</div>", 
+        st.markdown(f"<div style='text-align: center; padding: 4px;'>{num_images} items</div>", 
                    unsafe_allow_html=True)
     
     with nav_cols[2]:
