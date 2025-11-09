@@ -152,7 +152,7 @@ def create_image_selector(key, label, img_bytes, card_width=200, card_height=250
     nav_cols = st.columns([1, 3, 1])
     
     with nav_cols[0]:
-        if st.button("◀ Previous", key=f"prev_{key}", disabled=(current_page == 0),
+        if st.button("◀", key=f"prev_{key}", disabled=(current_page == 0),
                     width='content'):
             st.session_state[f"carousel_page_{key}"] = max(0, current_page - 1)
             st.rerun()
@@ -162,12 +162,10 @@ def create_image_selector(key, label, img_bytes, card_width=200, card_height=250
                    unsafe_allow_html=True)
     
     with nav_cols[2]:
-        if st.button("Next ▶", key=f"next_{key}", disabled=(current_page >= total_pages - 1),
+        if st.button("▶", key=f"next_{key}", disabled=(current_page >= total_pages - 1),
                     width='content'):
             st.session_state[f"carousel_page_{key}"] = min(total_pages - 1, current_page + 1)
             st.rerun()
-    
-    st.markdown("---")
     
     # Calculate visible images for current page
     start_idx = current_page * items_per_page
