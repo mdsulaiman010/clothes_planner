@@ -9,6 +9,10 @@ from db_functions import *
 from datetime import datetime
 from google import genai
 from google.genai import types
+from streamlit_carousel import carousel
+import base64
+
+def b64(b): return "data:image/png;base64," + base64.b64encode(b).decode()
 
 st.set_page_config(page_title="Mobile Image Uploader", page_icon="📷", layout="centered")
 with open ('style.css', 'r') as f:
@@ -113,7 +117,46 @@ def selector_page():
     if 'authenticated' in st.session_state and st.session_state.authenticated:
         st.title("💃 Outfit Selector")
 
-    if st.button('Logout'):
+        # Extract all image bytes for each category
+        outerwear_bytes = filter_image_data_by_category('outerwear')
+        topwear_bytes = filter_image_data_by_category('top')
+        bottomwear_bytes = filter_image_data_by_category('bottomwear')
+        footwear_bytes = filter_image_data_by_category('footwear')
+        accessories_bytes = filter_image_data_by_category('accessories')
+
+        for segment, img_bytes in zip(['Outerwear', 'Top', 'Bottomwear', 'Shoes', 'Accessories'], [outerwear_bytes, topwear_bytes, bottomwear_bytes, footwear_bytes, accessories_bytes]):
+            if len(img_bytes) == 0:
+                print(f'No images to display for {segment}')
+            
+            else:
+                images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(img_bytes)]
+                
+                st.write(f'Select an {segment}')
+                carousel(images, interval=None)
+                st.divider()
+
+                
+        # # Create image carousel for each category
+        # outerwear_images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(outerwear_bytes)]
+        # topwear_images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(topwear_bytes)]
+        # bottomwear_images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(bottomwear_bytes)]
+        # footwear_images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(footwear_bytes)]
+        # # accessories_images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(accessories_bytes)]
+
+        # for segment, images in zip(['Outerwear', 'Top', 'Bottomwear', 'Shoes'], [outerwear_images, topwear_images, bottomwear_images, footwear_images]):
+        #     st.write(f'Select an {segment}')
+        #     carousel(images)
+        #     st.divider()
+
+
+        # st.write('Outerwear')
+        # carousel(topwear_images)
+        # carousel(bottomwear_images)
+        # carousel(footwear_images)
+        # carousel(accessories_images)
+
+
+    if st.button('Logout'): 
         st.session_state.authenticated = False
         st.session_state.page = 'login'
         st.success('Successfully logged out.')
