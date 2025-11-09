@@ -153,7 +153,7 @@ def create_image_selector(key, label, img_bytes, card_width=200, card_height=250
     
     with nav_cols[0]:
         if st.button("◀ Previous", key=f"prev_{key}", disabled=(current_page == 0),
-                    use_container_width=True):
+                    width='content'):
             st.session_state[f"carousel_page_{key}"] = max(0, current_page - 1)
             st.rerun()
     
@@ -163,7 +163,7 @@ def create_image_selector(key, label, img_bytes, card_width=200, card_height=250
     
     with nav_cols[2]:
         if st.button("Next ▶", key=f"next_{key}", disabled=(current_page >= total_pages - 1),
-                    use_container_width=True):
+                    width='content'):
             st.session_state[f"carousel_page_{key}"] = min(total_pages - 1, current_page + 1)
             st.rerun()
     
@@ -190,15 +190,13 @@ def create_image_selector(key, label, img_bytes, card_width=200, card_height=250
             standardized_img.paste(img, offset)
             
             # Display standardized image
-            st.image(standardized_img, width='stretch')
+            st.image(standardized_img, width='content')
             
             # Selection button
             is_selected = st.session_state[f"selected_{key}"] == img_idx
             button_label = "✓ Selected" if is_selected else "Select"
             
-            if st.button(button_label, key=f"btn_{key}_{img_idx}", 
-                       type="primary" if is_selected else "secondary",
-                       width='stretch'):
+            if st.button(button_label, key=f"btn_{key}_{img_idx}", type="primary" if is_selected else "secondary", width='content'):
                 st.session_state[f"selected_{key}"] = img_idx
                 st.rerun()
     
@@ -259,7 +257,7 @@ def selector_page():
         ]
         
         for key, label, img_bytes in categories:
-            selected_img = create_image_selector(key, label, img_bytes, items_per_page=5)
+            selected_img = create_image_selector(key, label, img_bytes, 300, 350, items_per_page=1)
             if selected_img:
                 selected_images[key] = selected_img
             st.divider()
