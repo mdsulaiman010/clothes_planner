@@ -7,3 +7,4 @@ python-dotenv==1.2.1
 requests==2.32.5
 google-genai==1.49.0
 streamlit-carousel==1.1.2
+beautifulsoup4==4.14.2
