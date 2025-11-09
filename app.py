@@ -10,7 +10,9 @@ from datetime import datetime
 from google import genai
 from google.genai import types
 from streamlit_carousel import carousel
+from streamlit.components.v1 import html
 import base64
+from bs4 import BeautifulSoup
 
 def b64(b): return "data:image/png;base64," + base64.b64encode(b).decode()
 
@@ -112,6 +114,127 @@ def image_page():
         st.session_state.page = 'login'
         st.success('Successfully logged out.')
 
+def b64(img_bytes):
+    """Convert image bytes to base64 string"""
+    return base64.b64encode(img_bytes).decode()
+
+
+import streamlit as st
+from PIL import Image
+import io
+import base64
+
+def b64(img_bytes):
+    """Convert image bytes to base64 string"""
+    return base64.b64encode(img_bytes).decode()
+
+def create_image_selector(key, label, img_bytes, card_width=200, card_height=250, items_per_page=4):
+    """Create a custom image selector with carousel/sliding window navigation"""
+    if not img_bytes:
+        st.write(f"No images to display for {label}")
+        return None
+    
+    # Initialize session state for this category if not exists
+    if f"selected_{key}" not in st.session_state:
+        st.session_state[f"selected_{key}"] = 0
+    
+    # Initialize carousel page state
+    if f"carousel_page_{key}" not in st.session_state:
+        st.session_state[f"carousel_page_{key}"] = 0
+    
+    num_images = len(img_bytes)
+    total_pages = (num_images + items_per_page - 1) // items_per_page  # Ceiling division
+    current_page = st.session_state[f"carousel_page_{key}"]
+    
+    st.write(f"Select a {label}")
+    
+    # Navigation controls
+    nav_cols = st.columns([1, 3, 1])
+    
+    with nav_cols[0]:
+        if st.button("◀ Previous", key=f"prev_{key}", disabled=(current_page == 0),
+                    use_container_width=True):
+            st.session_state[f"carousel_page_{key}"] = max(0, current_page - 1)
+            st.rerun()
+    
+    with nav_cols[1]:
+        st.markdown(f"<div style='text-align: center; padding: 8px;'>Page {current_page + 1} of {total_pages} ({num_images} items)</div>", 
+                   unsafe_allow_html=True)
+    
+    with nav_cols[2]:
+        if st.button("Next ▶", key=f"next_{key}", disabled=(current_page >= total_pages - 1),
+                    use_container_width=True):
+            st.session_state[f"carousel_page_{key}"] = min(total_pages - 1, current_page + 1)
+            st.rerun()
+    
+    st.markdown("---")
+    
+    # Calculate visible images for current page
+    start_idx = current_page * items_per_page
+    end_idx = min(start_idx + items_per_page, num_images)
+    
+    # Display images in columns for current page
+    cols = st.columns(items_per_page)
+    
+    for col_idx, img_idx in enumerate(range(start_idx, end_idx)):
+        with cols[col_idx]:
+            # Load and resize image to standard dimensions
+            img = Image.open(io.BytesIO(img_bytes[img_idx]))
+            
+            # Resize image to fit card while maintaining aspect ratio
+            img.thumbnail((card_width, card_height), Image.Resampling.LANCZOS)
+            
+            # Create a new image with fixed dimensions and center the resized image
+            standardized_img = Image.new('RGB', (card_width, card_height), color='white')
+            offset = ((card_width - img.width) // 2, (card_height - img.height) // 2)
+            standardized_img.paste(img, offset)
+            
+            # Display standardized image
+            st.image(standardized_img, width='stretch')
+            
+            # Selection button
+            is_selected = st.session_state[f"selected_{key}"] == img_idx
+            button_label = "✓ Selected" if is_selected else "Select"
+            
+            if st.button(button_label, key=f"btn_{key}_{img_idx}", 
+                       type="primary" if is_selected else "secondary",
+                       width='stretch'):
+                st.session_state[f"selected_{key}"] = img_idx
+                st.rerun()
+    
+    # Fill empty columns if on last page
+    for col_idx in range(end_idx - start_idx, items_per_page):
+        with cols[col_idx]:
+            st.empty()
+    
+    return img_bytes[st.session_state[f"selected_{key}"]]
+
+def create_outfit_grid(selected_images):
+    # Define the 2x2 grid layout (adjust based on your preference)
+    grid_positions = {
+        'outerwear': (0, 0),
+        'topwear': (0, 1),
+        'bottomwear': (1, 0),
+        'footwear': (1, 1),
+    }
+    
+    # Create base image (2x2 grid)
+    img_size = 300  # Size of each cell
+    grid_img = Image.new('RGB', (img_size * 2, img_size * 2), color='white')
+    
+    for key, img_bytes in selected_images.items():
+        if img_bytes and key in grid_positions:
+            row, col = grid_positions[key]
+            img = Image.open(io.BytesIO(img_bytes))
+            img = img.resize((img_size, img_size), Image.Resampling.LANCZOS)
+            grid_img.paste(img, (col * img_size, row * img_size))
+    
+    # Convert to bytes
+    buf = io.BytesIO()
+    grid_img.save(buf, format='PNG')
+    buf.seek(0)
+    return buf.getvalue()
+
 
 def selector_page():
     if 'authenticated' in st.session_state and st.session_state.authenticated:
@@ -124,37 +247,52 @@ def selector_page():
         footwear_bytes = filter_image_data_by_category('footwear')
         accessories_bytes = filter_image_data_by_category('accessories')
 
-        for segment, img_bytes in zip(['Outerwear', 'Top', 'Bottomwear', 'Shoes', 'Accessories'], [outerwear_bytes, topwear_bytes, bottomwear_bytes, footwear_bytes, accessories_bytes]):
-            if len(img_bytes) == 0:
-                print(f'No images to display for {segment}')
-            
+        # Create selectors and store selected images
+        selected_images = {}
+
+        categories = [
+            ("outerwear",   "Outerwear",   outerwear_bytes),
+            ("topwear",     "Top",         topwear_bytes),
+            ("bottomwear",  "Bottomwear",  bottomwear_bytes),
+            ("footwear",    "Shoes",       footwear_bytes),
+            ("accessories", "Accessories", accessories_bytes),
+        ]
+        
+        for key, label, img_bytes in categories:
+            selected_img = create_image_selector(key, label, img_bytes, items_per_page=5)
+            if selected_img:
+                selected_images[key] = selected_img
+            st.divider()
+        
+        # Create outfit compilation button
+        if st.button("📸 Create Outfit & Send to WhatsApp", type="primary"):
+            if len(selected_images) >= 2:  # At least 2 items selected
+                outfit_grid = create_outfit_grid(selected_images)
+                
+                # Preview the grid
+                st.image(outfit_grid, caption="Your Outfit Compilation")
+                
+                # TODO: Implement WhatsApp sending logic here
+                # send_to_whatsapp(outfit_grid)
+                
+                st.success("Outfit compilation created! Ready to send to WhatsApp.")
             else:
-                images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(img_bytes)]
-                
-                st.write(f'Select an {segment}')
-                carousel(images, interval=None)
-                st.divider()
+                st.warning("Please select at least 2 items to create an outfit.")
 
-                
-        # # Create image carousel for each category
-        # outerwear_images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(outerwear_bytes)]
-        # topwear_images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(topwear_bytes)]
-        # bottomwear_images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(bottomwear_bytes)]
-        # footwear_images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(footwear_bytes)]
-        # # accessories_images = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i,b in enumerate(accessories_bytes)]
 
-        # for segment, images in zip(['Outerwear', 'Top', 'Bottomwear', 'Shoes'], [outerwear_images, topwear_images, bottomwear_images, footwear_images]):
-        #     st.write(f'Select an {segment}')
-        #     carousel(images)
+
+        # for key, label, img_bytes in categories:
+        #     if not img_bytes:
+        #         st.write(f"No images to display for {label}")
+        #         st.divider()
+        #         continue
+
+        #     items = [{"img": b64(b), "title": f"Image {i+1}", "text": ""} for i, b in enumerate(img_bytes)]
+        #     st.write(f"Select a {label}")
+        #     carousel(items, interval=None, indicators=True, controls=True, key=f"carousel_{key}")
+
+        #     # hidden text input that JS will keep updated with the active index
         #     st.divider()
-
-
-        # st.write('Outerwear')
-        # carousel(topwear_images)
-        # carousel(bottomwear_images)
-        # carousel(footwear_images)
-        # carousel(accessories_images)
-
 
     if st.button('Logout'): 
         st.session_state.authenticated = False
