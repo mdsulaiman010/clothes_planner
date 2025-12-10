@@ -1,0 +1,167 @@
+{
+  "outerwear": [
+    "jacket",
+    "coat",
+    "blazer",
+    "bomber_jacket",
+    "denim_jacket",
+    "leather_jacket",
+    "parka",
+    "trench_coat",
+    "windbreaker",
+    "puffer_jacket",
+    "raincoat",
+    "overcoat",
+    "cape",
+    "poncho",
+    "peacoat",
+    "anorak",
+    "varsity_jacket",
+    "utility_jacket",
+    "fleece_jacket"
+  ],
+
+  "top": {
+    "casual_and_everyday": [
+      "t_shirt",
+      "polo_shirt",
+      "tank_top",
+      "tube_top",
+      "crop_top",
+      "henley_shirt"
+    ],
+    "shirts_and_blouses": [
+      "button_up_shirt",
+      "dress_shirt",
+      "blouse",
+      "oxford_shirt",
+      "flannel_shirt",
+      "overshirt"
+    ],
+    "knitwear": [
+      "sweater",
+      "pullover",
+      "cardigan",
+      "turtleneck",
+      "mock_neck",
+      "knit_vest"
+    ],
+    "special_use": [
+      "tunic",
+      "tunic_top",
+      "wrap_top",
+      "layering_top"
+    ]
+  },
+
+  "bottomwear": {
+    "pants_and_trousers": [
+      "jeans",
+      "trousers",
+      "dress_pants",
+      "chinos",
+      "cargo_pants",
+      "sweatpants",
+      "track_pants",
+      "leggings",
+      "palazzo_pants",
+      "culottes"
+    ],
+    "shorts": [
+      "casual_shorts",
+      "denim_shorts",
+      "cargo_shorts",
+      "athletic_shorts",
+      "bermuda_shorts"
+    ],
+    "skirts": [
+      "mini_skirt",
+      "midi_skirt",
+      "maxi_skirt",
+      "pencil_skirt",
+      "a_line_skirt",
+      "pleated_skirt",
+      "wrap_skirt"
+    ]
+  },
+
+  "footwear": {
+    "casual_shoes": [
+      "sneakers",
+      "slip_on_shoes",
+      "loafers",
+      "boat_shoes"
+    ],
+    "formal_shoes": [
+      "oxfords",
+      "derbies",
+      "brogues",
+      "monk_strap_shoes"
+    ],
+    "boots": [
+      "ankle_boots",
+      "chelsea_boots",
+      "combat_boots",
+      "knee_high_boots",
+      "hiking_boots",
+      "work_boots"
+    ],
+    "open_footwear": [
+      "sandals",
+      "flip_flops",
+      "slides",
+      "espadrilles"
+    ],
+    "sports_footwear": [
+      "running_shoes",
+      "training_shoes",
+      "football_boots",
+      "basketball_shoes"
+    ]
+  },
+
+  "accessories": {
+    "head_and_face": [
+      "hat",
+      "cap",
+      "beanie",
+      "headband",
+      "hijab",
+      "scarf",
+      "face_mask"
+    ],
+    "neck_and_upper_body": [
+      "scarf",
+      "shawl",
+      "tie",
+      "bow_tie",
+      "necklace",
+      "brooch"
+    ],
+    "hands_and_arms": [
+      "gloves",
+      "bracelet",
+      "watch",
+      "arm_cuff"
+    ],
+    "bags_and_carry_goods": [
+      "backpack",
+      "handbag",
+      "tote_bag",
+      "crossbody_bag",
+      "clutch",
+      "wallet",
+      "pouch"
+    ],
+    "belts_and_eyewear": [
+      "belt",
+      "sunglasses",
+      "prescription_glasses"
+    ],
+    "tech_wearables": [
+      "smartwatch",
+      "fitness_band",
+      "earbuds"
+    ]
+  }
+}

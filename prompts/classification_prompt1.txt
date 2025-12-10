@@ -1,0 +1,5 @@
+Categorize the attached clothing into 1 of 5 categories: outerwear, top, bottomwear, footwear, accessories. 
+    
+Only return the predicted category. 
+
+Do not provide explanations or additional discussion points.
