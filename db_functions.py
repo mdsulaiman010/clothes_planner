@@ -4,7 +4,7 @@ from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
 import gridfs
-import io
+from supabase import create_client, Client
 
 ####################################
 #####     SQLite Functions     #####
@@ -39,18 +39,18 @@ def register_user(username, password):
     conn.close()
 
 
-def authenticate(username, password):
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
+# def authenticate(username, password):
+#     conn = sqlite3.connect('users.db')
+#     c = conn.cursor()
 
-    hashed_pw = hashlib.sha256(password.encode()).hexdigest()
-    c.execute("SELECT * FROM users WHERE username = ? AND password = ?",
-              (username, hashed_pw))
+#     hashed_pw = hashlib.sha256(password.encode()).hexdigest()
+#     c.execute("SELECT * FROM users WHERE username = ? AND password = ?",
+#               (username, hashed_pw))
 
-    user = c.fetchone()
-    conn.close()
+#     user = c.fetchone()
+#     conn.close()
 
-    return True if user else False
+#     return True if user else False
 
 
 #####################################
@@ -77,12 +77,12 @@ def connect_mongodb():
         print(f'Error initializing DB. Error:\n{e}')
         return None, None, None
     
-def filter_image_data_by_category(category):
+def filter_image_data_by_category(username, category):
     # Connect to MongoDB cluster
     client, db, fs = connect_mongodb()
 
     # Filter documents from files collection by category
-    filtered_img_details = db['images.files'].find({'metadata.category': category})
+    filtered_img_details = db['images.files'].find({'metadata.uploadedBy': username, 'metadata.category': category})
 
     # Extract all relevant IDs for each image details
     file_ids = [details['_id'] for details in filtered_img_details]
@@ -99,3 +99,52 @@ def filter_image_data_by_category(category):
     images_data = [chunk['data'] for chunk in chunks]
 
     return images_data
+
+
+######################################
+#####     Supabase Functions     #####
+######################################
+
+def connect_supabase():
+    load_dotenv()
+
+    SUPABASE_URL = os.environ['SUPABASE_URL']
+    SUPABASE_KEY = os.environ['SUPABASE_KEY']
+
+    client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return client
+
+def check_existing_users(client):
+    response = client.table('users').select('username').execute()
+    existing_users = [item['username'] for item in response.data]
+
+    return existing_users
+
+def add_new_user(client, username, password, phone_number):
+    # Gather list of existing users in database
+    existing_users = check_existing_users(client)
+
+    # Verify if new user is creating new account with existing username in database
+    if any(user for user in existing_users if user == username):
+        print('Username already taken. Please try another one.')
+        return False
+
+    else:
+        hashed_pw = hashlib.sha256(password.encode()).hexdigest()
+        user_dict = {'username': username, 
+                     'password': hashed_pw,
+                     'mobile_number': phone_number}
+
+        response = client.table('users').insert(user_dict).execute()
+
+        if response.data:
+            print('Your account has been successfully created.')
+            return True
+        
+def authenticate(username, password):
+    client = connect_supabase()
+    
+    hashed_pw = hashlib.sha256(password.encode()).hexdigest()
+
+    response = client.table('users').select('*').eq('username', username).eq('password', hashed_pw).execute()
+    return len(response.data) > 0
