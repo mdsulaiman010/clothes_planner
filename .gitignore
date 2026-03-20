@@ -4,3 +4,10 @@ sam_venv/
 users.db
 __pycache__/
 *.ipynb
+
+# Backend
+backend/tempImages/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
