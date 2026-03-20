@@ -1,4 +1,6 @@
 .env
 venv/
+sam_venv/
 users.db
 __pycache__/
+*.ipynb

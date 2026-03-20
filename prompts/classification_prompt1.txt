@@ -1,5 +1,27 @@
-Categorize the attached clothing into 1 of 5 categories: outerwear, top, bottomwear, footwear, accessories. 
-    
-Only return the predicted category. 
+Categorize the attached clothing into one of the categories below: 
+- jacket
+- blazer
+- sweater
+- hoodie
+- casual_and_everyday
+- shirts_and_blouses
+- knitwear
+- special_use
+- pants_and_trousers
+- shorts
+- skirts
+- casual_shoes
+- formal_shoes
+- boots
+- open_footwear
+- sports_footwear
+- head_and_face
+- neck_and_upper_body
+- hands_and_arms
+- bags_and_carry_goods
+- belts_and_eyewear
+- tech_wearables
+
+Only return the predicted category.
 
 Do not provide explanations or additional discussion points.

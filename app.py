@@ -8,6 +8,9 @@ with open ('style.css', 'r') as f:
 st.markdown(f"<style>{css}</style>",unsafe_allow_html=True)
 
 def main():
+    if 'USERNAME' not in st.session_state:
+        st.session_state.USERNAME = None
+
     # Initialize user state as "NOT AUTHENTICATED" to maintain user login status
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False

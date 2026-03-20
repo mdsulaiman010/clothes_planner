@@ -39,7 +39,7 @@ Your selection must be regarded as "colors_list" represented as a Python list of
 
 
 _STEP 5_:
-Provide a general description of the provided clothing or accessory within 20 words.
+Provide a general description of the provided clothing or accessory within 8 words.
 
 Capture all core features of the clothing or accessory.
 
@@ -61,9 +61,9 @@ Follow the following dictionary key-value template:
 
 
 _STEP 6_:
-Return the Python dictionary output.
+Return output as Python dictionary without any code prefixes.
 
-Do not return an output to be run as code. Return only the dictionary as a string.
+DO NOT INCLUDE "python" OR "json" IN THE PRELIMINARY PART OF THE OUTPUT.
 
 There should be 5 key-value pairs with no missing key or value.
 
