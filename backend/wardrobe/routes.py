@@ -11,7 +11,7 @@ from services.db_functions import (
     mongodb_get_item_by_id,
     mongodb_delete_item,
 )
-from services.s3_service import s3_upload_image, s3_get_presigned_urls_for_user, s3_delete_image
+from services.s3_service import s3_upload_image, s3_get_presigned_urls_for_user, s3_delete_image, connect_s3
 
 
 @wardrobe_bp.route('/upload', methods=['POST'])
@@ -41,8 +41,16 @@ def upload():
                     os.remove(temp_file)
 
                 doc = mongodb_get_item_by_id(item_id)
+                bucket_name = os.environ['S3_BUCKET_NAME']
+                s3_client = connect_s3(return_type='client')
+                url = s3_client.generate_presigned_url(
+                    'get_object',
+                    Params={'Bucket': bucket_name, 'Key': f"{g.current_user}/{item_path}"},
+                    ExpiresIn=3600,
+                )
                 items.append({
                     'id': item_id,
+                    'url': url,
                     'mainCategory': doc.get('mainCategory', '') if doc else '',
                     'subCategory': doc.get('subCategory', '') if doc else '',
                 })
