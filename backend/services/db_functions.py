@@ -74,7 +74,10 @@ def mongodb_save_image_and_metadata(collection, username, raw):
     with open(os.path.join(prompts_dir, 'clothing_hierarchy.json'), 'r') as categories_f:
         fashion_taxonomy = json.load(categories_f)
 
-    subCategory = classify_image(raw)
+    try:
+        subCategory = classify_image(raw).strip().lower()
+    except RuntimeError:
+        subCategory = 'unknown'
     mainCategory = [key for key, value in fashion_taxonomy.items() if subCategory in value]
     mainCategory = mainCategory[0] if mainCategory else 'accessories'
 
@@ -85,12 +88,20 @@ def mongodb_save_image_and_metadata(collection, username, raw):
     ext = img_format.lower()
     img = convert_img_to_square(img, 256)
 
+    save_img = img
+    if img_format.upper() == 'JPEG' and save_img.mode == 'RGBA':
+        save_img = save_img.convert('RGB')
+
+    img_buffer = io.BytesIO()
+    save_img.save(img_buffer, format=img_format)
+    converted_bytes = img_buffer.getvalue()
+
     converted_metadata_dict['mainCategory'] = mainCategory
     converted_metadata_dict['subCategory'] = subCategory
     converted_metadata_dict['width'] = img.width
     converted_metadata_dict['height'] = img.height
     converted_metadata_dict['format'] = img_format
-    converted_metadata_dict['bytes'] = len(raw)
+    converted_metadata_dict['bytes'] = len(converted_bytes)
     converted_metadata_dict['uploadedBy'] = username
     converted_metadata_dict['uploadedAt'] = time.time()
 
@@ -104,7 +115,7 @@ def mongodb_save_image_and_metadata(collection, username, raw):
 
             filepath = f"{item_id}_{username}.{ext}"
             with open(os.path.join(temp_dir, filepath), "wb") as f:
-                f.write(raw)
+                f.write(converted_bytes)
 
             return str(item_id), filepath
         except Exception as e:

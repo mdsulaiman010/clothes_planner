@@ -9,15 +9,22 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 max_retries = 5
 
 
-def _get_aws_credentials():
-    credentials_dir = os.environ.get('CREDENTIALS_DIR', '')
-    credentials = pd.read_excel(credentials_dir)
-    access_key = credentials.loc[credentials['application'] == 'aws_access_key', 'username'].values[0]
-    secret_key = credentials.loc[credentials['application'] == 'aws_secret_key', 'username'].values[0]
+def _get_aws_credentials(creds_by_excel=False):
+    access_key = os.environ['S3_CLIENT_ID']
+    secret_key = os.environ['S3_SECRET_KEY']
+
+    if creds_by_excel:
+        credentials_dir = os.environ.get('CREDENTIALS_DIR', '')
+        credentials = pd.read_excel(credentials_dir)
+        access_key = credentials.loc[credentials['application'] == 'aws_access_key', 'username'].values[0]
+        secret_key = credentials.loc[credentials['application'] == 'aws_secret_key', 'username'].values[0]
+    
     return access_key, secret_key
 
 
-def connect_s3(return_type='client', region_name='ap-southeast-1'):
+def connect_s3(return_type='client', region_name='ap-southeast-5'):
+    if region_name is None:
+        region_name = os.environ.get('S3_BUCKET_REGION', 'ap-southeast-5')
     access_key, secret_key = _get_aws_credentials()
 
     if return_type == 'client':
