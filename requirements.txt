@@ -17,3 +17,4 @@ openpyxl==3.1.5
 modal
 moondream==0.2.0
 pillow==10.4.0
+google-generativeai
