@@ -1,26 +1,31 @@
-from flask import Flask
-from flask_cors import CORS
-from config import Config
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 
-def create_app():
-    app = Flask(__name__)
-    app.config.from_object(Config)
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+def create_app() -> FastAPI:
+    app = FastAPI()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=['*'],
+        allow_credentials=True,
+        allow_methods=['*'],
+        allow_headers=['*'],
+    )
 
-    from auth import auth_bp
-    from wardrobe import wardrobe_bp
-    from tryon import tryon_bp
-    from chat import chat_bp
+    from auth.routes import router as auth_router
+    from wardrobe.routes import router as wardrobe_router
+    from tryon.routes import router as tryon_router
+    from chat.routes import router as chat_router
 
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(wardrobe_bp, url_prefix='/api/wardrobe')
-    app.register_blueprint(tryon_bp, url_prefix='/api/tryon')
-    app.register_blueprint(chat_bp, url_prefix='/api/chat')
+    app.include_router(auth_router, prefix='/api/auth', tags=['auth'])
+    app.include_router(wardrobe_router, prefix='/api/wardrobe', tags=['wardrobe'])
+    app.include_router(tryon_router, prefix='/api/tryon', tags=['tryon'])
+    app.include_router(chat_router, prefix='/api/chat', tags=['chat'])
 
     return app
 
 
 if __name__ == '__main__':
+    import uvicorn
     app = create_app()
-    app.run(debug=True, port=5000)
+    uvicorn.run(app, host='0.0.0.0', port=5000)

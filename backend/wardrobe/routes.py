@@ -1,8 +1,7 @@
 import os
 import json
-from flask import request, jsonify, g
-from wardrobe import wardrobe_bp
-from auth.decorators import jwt_required
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from auth.dependencies import get_current_user
 from services.db_functions import (
     connect_mongodb,
     mongodb_filter_by_user_and_category,
@@ -12,31 +11,28 @@ from services.db_functions import (
     mongodb_delete_item,
 )
 from services.s3_service import s3_upload_image, s3_get_presigned_urls_for_user, s3_delete_image, connect_s3
+from config import settings
+
+router = APIRouter()
 
 
-@wardrobe_bp.route('/upload', methods=['POST'])
-@jwt_required
-def upload():
-    if 'files' not in request.files:
-        return jsonify({'error': 'No files provided'}), 400
-
-    files = request.files.getlist('files')
-    if not files:
-        return jsonify({'error': 'No files provided'}), 400
-
+@router.post('/upload')
+async def upload(
+    files: list[UploadFile] = File(...),
+    current_user: str = Depends(get_current_user),
+):
     _, clothes_db = connect_mongodb()
     collection = clothes_db['items']
     items = []
 
     for f in files:
-        raw = f.read()
-        item_id, item_path = mongodb_save_image_and_metadata(collection, g.current_user, raw)
+        raw = await f.read()
+        item_id, item_path = mongodb_save_image_and_metadata(collection, current_user, raw)
 
         if item_id:
             try:
-                s3_upload_image(item_path, g.current_user)
-                temp_dir = os.path.join(os.path.dirname(__file__), '..', 'tempImages')
-                temp_file = os.path.join(temp_dir, item_path)
+                s3_upload_image(item_path, current_user)
+                temp_file = os.path.join(settings.TEMP_DIR, item_path)
                 if os.path.exists(temp_file):
                     os.remove(temp_file)
 
@@ -45,7 +41,7 @@ def upload():
                 s3_client = connect_s3(return_type='client')
                 url = s3_client.generate_presigned_url(
                     'get_object',
-                    Params={'Bucket': bucket_name, 'Key': f"{g.current_user}/{item_path}"},
+                    Params={'Bucket': bucket_name, 'Key': f"{current_user}/{item_path}"},
                     ExpiresIn=3600,
                 )
                 items.append({
@@ -59,57 +55,52 @@ def upload():
         else:
             items.append({'error': f'Failed to process {f.filename}'})
 
-    return jsonify({'items': items}), 201
+    return {'items': items}
 
 
-@wardrobe_bp.route('/items', methods=['GET'])
-@jwt_required
-def get_items():
-    category = request.args.get('category', 'top')
-    skip = int(request.args.get('skip', 0))
-    limit = int(request.args.get('limit', 20))
+@router.get('/items')
+def get_items(
+    category: str = Query('top'),
+    skip: int = Query(0),
+    limit: int = Query(20),
+    current_user: str = Depends(get_current_user),
+):
+    item_ids = mongodb_filter_by_user_and_category(current_user, category, skip, limit)
+    total = mongodb_count_by_user_and_category(current_user, category)
 
-    item_ids = mongodb_filter_by_user_and_category(g.current_user, category, skip, limit)
-    total = mongodb_count_by_user_and_category(g.current_user, category)
+    items = s3_get_presigned_urls_for_user(current_user, item_ids)
 
-    items = s3_get_presigned_urls_for_user(g.current_user, item_ids)
-
-    # Enrich with metadata
     for item in items:
         doc = mongodb_get_item_by_id(item['id'])
         if doc:
             item['mainCategory'] = doc.get('mainCategory', '')
             item['subCategory'] = doc.get('subCategory', '')
 
-    return jsonify({'items': items, 'total': total})
+    return {'items': items, 'total': total}
 
 
-@wardrobe_bp.route('/categories', methods=['GET'])
+@router.get('/categories')
 def get_categories():
-    prompts_dir = os.path.join(os.path.dirname(__file__), '..', 'prompts')
-    with open(os.path.join(prompts_dir, 'clothing_hierarchy.json'), 'r') as f:
+    with open(os.path.join(settings.PROMPTS_DIR, 'clothing_hierarchy.json'), 'r') as f:
         categories = json.load(f)
-    return jsonify(categories)
+    return categories
 
 
-@wardrobe_bp.route('/items/<item_id>', methods=['DELETE'])
-@jwt_required
-def delete_item(item_id):
+@router.delete('/items/{item_id}')
+def delete_item(item_id: str, current_user: str = Depends(get_current_user)):
     doc = mongodb_get_item_by_id(item_id)
     if not doc:
-        return jsonify({'error': 'Item not found'}), 404
+        raise HTTPException(status_code=404, detail='Item not found')
 
-    if doc.get('uploadedBy') != g.current_user:
-        return jsonify({'error': 'Unauthorized'}), 403
+    if doc.get('uploadedBy') != current_user:
+        raise HTTPException(status_code=403, detail='Unauthorized')
 
-    # Delete from S3
     ext = doc.get('format', 'png').lower()
-    s3_key = f"{g.current_user}/{item_id}_{g.current_user}.{ext}"
+    s3_key = f"{current_user}/{item_id}_{current_user}.{ext}"
     try:
         s3_delete_image(s3_key)
     except Exception:
-        pass  # S3 deletion is best-effort
+        pass
 
-    # Delete from MongoDB
     mongodb_delete_item(item_id)
-    return jsonify({'message': 'Item deleted'}), 200
+    return {'message': 'Item deleted'}

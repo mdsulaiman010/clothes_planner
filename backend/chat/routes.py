@@ -1,12 +1,18 @@
 import time
-from flask import request, jsonify, g
-from chat import chat_bp
-from auth.decorators import jwt_required
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from auth.dependencies import get_current_user
 from chat.gemini_service import GeminiChatService
 from chat.context import build_system_prompt
 from services.db_functions import connect_mongodb
 
+router = APIRouter()
 gemini_service = GeminiChatService()
+
+
+class SendMessageRequest(BaseModel):
+    message: str
+    page_context: dict = {}
 
 
 def _get_chat_collection():
@@ -14,60 +20,52 @@ def _get_chat_collection():
     return db['chat_sessions']
 
 
-@chat_bp.route('/message', methods=['POST'])
-@jwt_required
-def send_message():
-    data = request.get_json()
-    message = data.get('message', '').strip()
-    page_context = data.get('page_context', {})
+@router.post('/message')
+def send_message(body: SendMessageRequest, current_user: str = Depends(get_current_user)):
+    message = body.message.strip()
+    page_context = body.page_context
 
     if not message:
-        return jsonify({'error': 'Message is required'}), 400
+        raise HTTPException(status_code=400, detail='Message is required')
 
     collection = _get_chat_collection()
 
-    # Get or create chat session
-    session = collection.find_one({'username': g.current_user})
+    session = collection.find_one({'username': current_user})
     history = session.get('messages', []) if session else []
 
-    # Build context-aware system prompt
     system_prompt = build_system_prompt(page_context)
 
-    # Get reply from Gemini
     try:
         reply = gemini_service.get_reply(message, system_prompt, history)
     except Exception as e:
-        return jsonify({'error': f'Chat service error: {str(e)}'}), 500
+        raise HTTPException(status_code=500, detail=f'Chat service error: {str(e)}')
 
-    # Save messages
     now = time.time()
     user_msg = {'role': 'user', 'content': message, 'timestamp': now}
     assistant_msg = {'role': 'assistant', 'content': reply, 'timestamp': now}
 
     collection.update_one(
-        {'username': g.current_user},
+        {'username': current_user},
         {'$push': {'messages': {'$each': [user_msg, assistant_msg]}}},
         upsert=True,
     )
 
-    return jsonify({'reply': reply})
+    return {'reply': reply}
 
 
-@chat_bp.route('/history', methods=['GET'])
-@jwt_required
-def get_history():
+@router.get('/history')
+def get_history(current_user: str = Depends(get_current_user)):
     collection = _get_chat_collection()
-    session = collection.find_one({'username': g.current_user})
+    session = collection.find_one({'username': current_user})
     messages = session.get('messages', []) if session else []
-    return jsonify({'messages': messages})
+    return {'messages': messages}
 
 
-@chat_bp.route('/history', methods=['DELETE'])
-@jwt_required
-def clear_history():
+@router.delete('/history')
+def clear_history(current_user: str = Depends(get_current_user)):
     collection = _get_chat_collection()
     collection.update_one(
-        {'username': g.current_user},
+        {'username': current_user},
         {'$set': {'messages': []}},
     )
-    return jsonify({'message': 'Chat history cleared'})
+    return {'message': 'Chat history cleared'}

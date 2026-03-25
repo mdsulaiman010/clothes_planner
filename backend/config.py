@@ -1,36 +1,44 @@
 import os
-from dotenv import load_dotenv
-
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+from pydantic_settings import BaseSettings
 
 
-class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-    JWT_EXPIRATION_HOURS = 24
+class Settings(BaseSettings):
+    SECRET_KEY: str = 'dev-secret-key-change-in-production'
+    JWT_EXPIRATION_HOURS: int = 24
 
     # MongoDB
-    MONGODB_ID = os.environ.get('MONGODB_ID')
-    MONGODB_PW = os.environ.get('MONGODB_PW')
-    MONGODB_CLUSTER = os.environ.get('MONGODB_LOOKBOOK_CLUSTER')
+    MONGODB_ID: str = ''
+    MONGODB_PW: str = ''
+    MONGODB_LOOKBOOK_CLUSTER: str = ''
 
     # Supabase
-    SUPABASE_URL = os.environ.get('SUPABASE_URL')
-    SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
+    SUPABASE_URL: str = ''
+    SUPABASE_KEY: str = ''
 
     # AWS S3
-    S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME')
-    S3_BUCKET_REGION = os.environ.get('S3_BUCKET_REGION', 'ap-southeast-1')
-    CREDENTIALS_DIR = os.environ.get('CREDENTIALS_DIR')
+    S3_BUCKET_NAME: str = ''
+    S3_BUCKET_REGION: str = 'ap-southeast-1'
+    S3_CLIENT_ID: str = ''
+    S3_SECRET_KEY: str = ''
+    CREDENTIALS_DIR: str = ''
 
     # Gemini
-    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    GEMINI_API_KEY: str = ''
 
     # Moondream
-    MOONDREAM_ENDPOINT = os.environ.get('MOONDREAM_ENDPOINT')
+    MOONDREAM_ENDPOINT: str = ''
 
     # Fashn.ai
-    FASHN_API_KEY = os.environ.get('FASHN_API_KEY')
+    FASHN_API_KEY: str = ''
 
     # Paths
-    PROMPTS_DIR = os.path.join(os.path.dirname(__file__), 'prompts')
-    TEMP_DIR = os.environ.get('TEMP_DIR', os.path.join(os.path.dirname(__file__), 'tempImages'))
+    PROMPTS_DIR: str = os.path.join(os.path.dirname(__file__), 'prompts')
+    TEMP_DIR: str = os.environ.get('TEMP_DIR', os.path.join(os.path.dirname(__file__), 'tempImages'))
+
+    model_config = {
+        'env_file': os.path.join(os.path.dirname(__file__), '..', '.env'),
+        'extra': 'ignore',
+    }
+
+
+settings = Settings()
