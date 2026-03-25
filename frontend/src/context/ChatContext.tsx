@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { sendMessage as apiSendMessage, getChatHistory, clearChatHistory, ChatMessage } from '../api/chat';
 import { useAuth } from './AuthContext';
@@ -9,7 +9,7 @@ interface ChatState {
   sendMessage: (text: string) => Promise<void>;
   clearChat: () => Promise<void>;
   pageContext: Record<string, unknown>;
-  setPageContext: (ctx: Record<string, unknown>) => void;
+  setPageContext: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
 }
 
 const ChatContext = createContext<ChatState>(null!);
