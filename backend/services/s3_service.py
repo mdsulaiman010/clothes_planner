@@ -65,10 +65,11 @@ def connect_s3(return_type='client', region_name='ap-southeast-5'):
 
 
 def s3_upload_image(item_path, username):
+    from config import Config
     s3_client = connect_s3(return_type='client')
     bucket_name = os.environ['S3_BUCKET_NAME']
     s3_key = f"{username}/{item_path}"
-    temp_dir = os.path.join(os.path.dirname(__file__), '..', 'tempImages')
+    temp_dir = Config.TEMP_DIR
 
     for i in range(max_retries):
         try:

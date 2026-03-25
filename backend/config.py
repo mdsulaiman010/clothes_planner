@@ -33,4 +33,4 @@ class Config:
 
     # Paths
     PROMPTS_DIR = os.path.join(os.path.dirname(__file__), 'prompts')
-    TEMP_DIR = os.path.join(os.path.dirname(__file__), 'tempImages')
+    TEMP_DIR = os.environ.get('TEMP_DIR', os.path.join(os.path.dirname(__file__), 'tempImages'))
