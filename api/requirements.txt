@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+python-multipart
+PyJWT
+python-dotenv
+pymongo
+supabase
+boto3
+pandas
+openpyxl
+Pillow
+google-genai
+requests

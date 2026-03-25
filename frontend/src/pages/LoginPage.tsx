@@ -19,7 +19,8 @@ export default function LoginPage() {
       await login(username, password);
       navigate('/wardrobe');
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.response?.data?.error || 'Login failed');
+      const raw = err.response?.data?.detail || err.response?.data?.error;
+      setError(typeof raw === 'string' ? raw : 'Login failed');
     } finally {
       setLoading(false);
     }
